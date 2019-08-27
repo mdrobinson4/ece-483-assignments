@@ -64,7 +64,7 @@ for x = lin
         lin(x) = -1 * lin(x);
     end
 end
-cSub
+lin
 
 r = rand([1,5]);
 index = find(r < 0.5);
@@ -138,13 +138,11 @@ Z0 = rand(5,5);
 [X0, Y0] = meshgrid(1:5, 1:5);
 [X1, Y1] = meshgrid(1:.1:5, 1:.1:5);
 Z1 = interp2(X0, Y0, Z0, X1, Y1, 'cubic');
-surf(Z1);
+surf(X1,Y1,Z1);
 colormap('hsv')
 shading interp
 
 hold on
-contour(Z1);
+contour(X1, Y1, Z1);
 colorbar
 caxis([0 1])
-
-w = waitforbuttonpress;
