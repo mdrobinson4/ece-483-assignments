@@ -115,7 +115,7 @@ disp(['Grades: ', letters(totalGrade)]);
 w = waitforbuttonpress;
 
 % 1) Semilog plot
-x = 0:4;
+x = 0:4; 
 y = [15 25 55 115 144];
 
 figure
