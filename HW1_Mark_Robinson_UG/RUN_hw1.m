@@ -1,4 +1,4 @@
-close all; clear all;
+clc; close all; clear all;
 
 % 1) Scalar variables
 a = 10
@@ -44,7 +44,7 @@ w = waitforbuttonpress;
 
 % 6) Matrix Equations
 xMat = (aVec*bVec)*(aMat.^2)
-yVec = bVec*aVec
+yMat = bVec*aVec
 zMat = det(cMat)*(aMat*bMat).'
 
 w = waitforbuttonpress;
