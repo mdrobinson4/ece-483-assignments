@@ -59,19 +59,12 @@ eMat
 cSub = cMat(2:9, 2:9)
 
 lin = 1:20;
-for x = lin
-    if mod(x,2) == 0
-        lin(x) = -1 * lin(x);
-    end
-end
-lin
+index = find(mod(lin, 2) == 0);
+lin(index) = -1 * lin(index)
 
 r = rand([1,5]);
 index = find(r < 0.5);
-for i = index
-    r(i) = 0;
-end
-r
+r(index) = 0
 
 w = waitforbuttonpress;
 
