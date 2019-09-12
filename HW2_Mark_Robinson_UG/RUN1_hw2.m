@@ -22,7 +22,7 @@ opts.ExtraColumnsRule = "ignore";
 opts.EmptyLineRule = "read";
 
 % Import the data
-datatraining = readtable("C:\Users\mial2\Desktop\ece483\HW2\datatraining.txt", opts);
+datatraining = readtable("datatraining.txt", opts);
 clear opts
 
 % unseen data
@@ -33,35 +33,37 @@ opts.DataLines = [1, Inf];
 opts.Delimiter = ",";
 
 % Specify column names and types
-opts.VariableNames = ["index", "date", "Temperature", "Humidity", "Light", "CO2", "HumidityRatio", "Occupancy"];
+opts.VariableNames = ["index", "Date", "Temperature", "Humidity", "Light", "CO2", "HumidityRatio", "Occupancy"];
 opts.VariableTypes = ["double", "datetime", "double", "double", "double", "double", "double", "double"];
 opts = setvaropts(opts, 2, "InputFormat", "yyyy-MM-dd HH:mm:ss");
 opts.ExtraColumnsRule = "ignore";
 opts.EmptyLineRule = "read";
 
 % Import the data
-unseenData = readtable("C:\Users\mial2\Desktop\ece483\HW2\datatest.txt", opts);
+unseenData = readtable("datatest.txt", opts);
 
 
 %% Clear temporary variables
-features = opts.VariableNames;
-
+features = string(opts.VariableNames(2:end-1));
+%date = datenum(datestr(unseenData.date(2:end)));
 % seed random generator
- rng(sum('MarkRobinson'))
+rng(sum('MarkRobinson'))
+
 % testing data
-unseenData = unseenData{2:end, 3:end};
+unseenData = unseenData(2:end,2:end);
 % shuffle the testing data
 unseenData = unseenData(randperm(size(unseenData,1)),:);
 unseenOcc = unseenData(1:end,end);
 
-%training data
-datatraining = datatraining{2:end, 3:end};
-% shuffle the training data
+% k-fold training data
+datatraining = datatraining(2:end, 2:end);
+% shuffle the k-fold training data
 datatraining = datatraining(randperm(size(datatraining,1)),:);
 occupied = datatraining(1:end,end);
 
 k = 10;
-datapoints = length(datatraining);
+
+datapoints = height(datatraining);
 foldindices = zeros(k+1,1); % represents the start of a new bucket
 
 % create buckets
@@ -78,7 +80,7 @@ for index = 1:k+1 % create the buckets
 end
 
 % iterate each class and train the classifiers for each feature
-for class = 1:length(features)-3
+for class = 1:length(features)
     thresholds = zeros(k,1);
     testSpec = zeros(k,1);
     testSens = zeros(k,1);
@@ -86,11 +88,8 @@ for class = 1:length(features)-3
     auc = zeros(k,1);
     % iterate each of the fold -> alternate the testing (validation) set
     hold on
-    if class == length(features)-3
-        subplot(3,2,[class,class+1])
-    else
-        subplot(3,2,class)
-    end
+    subplot(3,3,class)
+
     for f = 1:k
         spec = zeros(datapoints,1);
 		sens = zeros(datapoints,1);
@@ -98,22 +97,26 @@ for class = 1:length(features)-3
         err = zeros(datapoints,1);
         % the testing (validation) set is at the front
         if f == 1
-            training = datatraining(foldindices(f+1):end, class);
-            trainOcc = occupied(foldindices(f+1):end);
+            training = datatraining{foldindices(f+1):end,class};
+            trainOcc = occupied{foldindices(f+1):end,1};
         % the testing (validation) set is at the end
         elseif f == k
-            training = datatraining(1:foldindices(f)-1, class);
-            trainOcc = occupied(1:foldindices(f)-1);
+            training = datatraining{1:foldindices(f)-1, class};
+            trainOcc = occupied{1:foldindices(f)-1,1};
         else
             % the testing (validation) set is in the center (kinda)
-            training = [datatraining(1:foldindices(f)-1, class) ; datatraining(foldindices(f+1):end, class)];
-            trainOcc = [occupied(1:foldindices(f)-1) ; occupied(foldindices(f+1):end)];
+            training = [datatraining{1:foldindices(f)-1,class} ; datatraining{foldindices(f+1):end, class}];
+            trainOcc = [occupied{1:foldindices(f)-1,1} ; occupied{foldindices(f+1):end,1}];
         end
         % testing (validation) set
-        testing = datatraining(foldindices(f):foldindices(f+1)-1, class); % For validation
-		testOcc = occupied(foldindices(f):foldindices(f+1)-1);
+        testing = datatraining{foldindices(f):foldindices(f+1)-1, class}; % For validation
+		testOcc = occupied{foldindices(f):foldindices(f+1)-1,1};
         
         % find the best DECISION BOUNDARY given this training and testing set
+        if class == 1
+            training = datenum(datestr(training));
+            testing = datenum(datestr(testing));
+        end
         ths = linspace(min(training),max(training),datapoints);
         for x = 1:length(ths)
             % find the best decision boundary for this fold
@@ -127,12 +130,13 @@ for class = 1:length(features)-3
 		[minErr, errI] = min(err);
         % get the corresponding threshold for the lowest error
 		thresholds(f) = ths(errI);
+        
         % try the threshold on the testing set
         [testSens(f),testSpec(f),testErr(f)] = getErr(testing,testOcc,thresholds(f));
     end
     
     hold off
-    title(['', string(features(class+2))]);
+    title(['', string(features(class))]);
     xlabel('1-Specificity') 
     ylabel('Sensitivity')  
     
@@ -140,9 +144,18 @@ for class = 1:length(features)-3
     th = mean(thresholds);
     % get the average of the errors
     avgErr = mean(minErr);
+    
+    if class == 1
+        unseen = datenum(datestr(unseenData{:,class}));
+    else
+        unseen = unseenData{:,class};
+    end
     % try the threshold on unseen data
-    [sens,spec,far,err] = getErr(unseenData,unseenOcc,th);
-    fprintf('class = %s\naverage error = %.8f\nfinal error = %.8f\nthreshold = %.8f\nauc = %.8f\n\n',string(features(class+2)),avgErr,err,th,-1*mean(auc))
+    [sens,spec,far,err] = getErr(unseen,unseenOcc{:,1},th);
+    fprintf('Classifier: %s\nAverage K-Fold Error: %.8f\nAverage K-Fold AUC: %.8f\nError On Unseen Data: %.8f\nThreshold: %.8f\n\n',string(features(class)),avgErr,-1*mean(auc),err,th)
+    if class == 1
+       string(datetime(th, 'ConvertFrom', 'datenum'))
+    end
 end
 
 function [sens, spec, far, err] = getErr(dataset, occupied, th)
