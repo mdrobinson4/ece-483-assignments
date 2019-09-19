@@ -47,9 +47,8 @@ i0 = find(ls==0);
 i1 = find(ls==1);
 i2 = find(ls==2);
 % calculate the prior for each class: P(Ci)
-prior0 = length(i0)/N;
-prior1 = length(i1)/N;
-prior2 = length(i2)/N;
+prior1 = length(i1)/(N);
+prior2 = length(i2)/(N);
 % get the [x,y] coordinates for each point in the corresponding class
 x0 = ds(i0,1);
 y0 = ds(i0,2);
@@ -69,21 +68,25 @@ c2 = cov([x2 y2]);
 figure(2)
 hold on
 
+z = zeros(N,1);
 % create new population. this time we will use multivarian distribution to
 % figure out which class each point belongs to
 for i=1:N
 x=rand(1,1)*8; 
 y=rand(1,1)*8;
+pdf1 = mvnpdf([x y],m1,c1)*prior1;
+%pdf1 = -(1/2)*log(c1)-(1/2)*([x1 y1]-m1)'*([x1 y1]-m1)+log(prior1)
+pdf2 = mvnpdf([x y],m2,c2)*prior2;
+%pdf2 = -(1/2)*log(c2)-(1/2)*([x2 y2]-m2)'*([x2 y2]-m1)+log(prior2)
 % within the bounds of rectangle 1
-if (mvnpdf([x y],m1,c1)*prior1 >= mvnpdf([x y],m2,c2)*prior2 && mvnpdf([x y],m1,c1)*prior1 >= mvnpdf([x y],m0,c0)*prior0)
+if (pdf1 >= pdf2)
     plot(x,y,'b+'); 
 % within the bounds of rectangle 2
-elseif (mvnpdf([x y],m2,c2)*prior2 >= mvnpdf([x y],m1,c1)*prior1 && mvnpdf([x y],m2,c2)*prior2 >= mvnpdf([x y],m0,c0)*prior0) 
+elseif (pdf2 > pdf1) 
     plot(x,y,'k*');
 % not within either rectangle (does not belong to a class)
 else
     plot(x,y,'go'); 
 end;
 end;
-
 hold off
