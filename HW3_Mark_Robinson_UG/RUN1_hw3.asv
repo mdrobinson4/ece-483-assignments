@@ -1,6 +1,6 @@
 clc; close all; clear all;
 
-rng(sum('MarkRobinson'));
+rng(sum('MarkRobinson'))
 
 % coordinates of the rectangle C1
 xa=2; xb=4; ya=1; yb=3;     
@@ -73,27 +73,20 @@ for i=1:N
 x=rand(1,1)*8; 
 y=rand(1,1)*8;
 if (((x > xa) && (y > ya) && (y < yb) && ( x < xb)) || ((x > xa2) && (y > ya2) && (y < yb2) && ( x < xb2)))
-    % calculate the posterior density for class 2 assuming normal
-    % distribution
-    pdf1 = mvnpdf([x y],m1,c1);
-    % calculate the probability that the point lies in class 1
-    p1 = pdf1*prior1;
-    % calculate the posterior density for class 2 assuming normal
-    % distribution
+    % 
+    pdf1 = mvnpdf([x y],m1,c1)*prior1;
     pdf2 = mvnpdf([x y],m2,c2)*prior2;
-    % calculate the probability that the point lies in class 2
-    p2 = pdf2*prior2;
-    % point belongs to class 1
-    if (p1 >= p2)
+    % within the bounds of rectangle 1
+    if (pdf1 >= pdf2)
         plot(x,y,'b+');
-        xlim([0 8]);
-        ylim([0 8]);
-        % point belongs to class 2
-    else (p1 > p2) 
+        xlim([0 8])
+        ylim([0 8])
+        % within the bounds of rectangle 2
+    else (pdf2 > pdf1) 
         plot(x,y,'k*');
-        xlim([0 8]);
-        ylim([0 8]);
+        xlim([0 8])
+        ylim([0 8])
     end;
 end;
 end;
-hold off;
+hold off
