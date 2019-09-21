@@ -1,7 +1,6 @@
 clc; close all; clear all;
-
+% set random seed
 rng(sum('MarkRobinson'));
-
 % coordinates of the rectangle C1
 xa=2; xb=4; ya=1; yb=3;     
 % coordinates of the rectangle C2
@@ -67,6 +66,9 @@ c2 = cov([x2 y2]);
 
 figure(2)
 hold on
+plot([xa xb xb xa xa],[ya ya yb yb ya],'-');
+% draw rectangle C2
+plot([xa2 xb2 xb2 xa2 xa2],[ya2 ya2 yb2 yb2 ya2],'-');
 % create new population. this time we will use multivarian distribution to
 % figure out which class each point belongs to
 for i=1:N
@@ -83,17 +85,27 @@ if (((x > xa) && (y > ya) && (y < yb) && ( x < xb)) || ((x > xa2) && (y > ya2) &
     pdf2 = mvnpdf([x y],m2,c2)*prior2;
     % calculate the probability that the point lies in class 2
     p2 = pdf2*prior2;
+    % calculate posterior
+    post1 = p1/p2;
+    post2 = p2/p1;
+    %linear discriminant functions
+    lg1 = -(1/2)*log(abs(c1))-(1/2)*inv(c1)*([x y]-m1).'*([x y]-m1)+log(prior1);
+    lg2 = -(1/2)*log(abs(c2))-(1/2)*inv(c2)*([x y]-m2).'*([x y]-m2)+log(prior2);
+    % quadratic discriminant functions
+    qg1 = -(1/2)*log(abs(c1))-(1/2)*((inv(c1)*[x y].'*[x y])-(2*inv(c1)*[x y].'*m1)+(inv(c1)*m1.'*m1))+log(prior1)
+    qg2 = -(1/2)*log(abs(c2))-(1/2)*((inv(c2)*[x y].'*[x y])-(2*inv(c2)*[x y].'*m1)+(inv(c2)*m1.'*m1))+log(prior2);
+    
     % point belongs to class 1
-    if (p1 >= p2)
+    if (qg1 >= qg2)
         plot(x,y,'b+');
         xlim([0 8]);
         ylim([0 8]);
         % point belongs to class 2
-    else (p1 > p2) 
+    else
         plot(x,y,'k*');
         xlim([0 8]);
         ylim([0 8]);
-    end;
-end;
-end;
+    end
+end
+end
 hold off;
