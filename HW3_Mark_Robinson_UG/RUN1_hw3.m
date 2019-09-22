@@ -13,7 +13,7 @@ plot([xa2 xb2 xb2 xa2 xa2],[ya2 ya2 yb2 yb2 ya2],'-');
 
 % generate positive and negative examples
 % no of data points
-N=500;
+N=100;
 % store coordinates for each point
 ds=zeros(N,2); 
 % store our labels
@@ -71,10 +71,13 @@ plot([xa xb xb xa xa],[ya ya yb yb ya],'-');
 plot([xa2 xb2 xb2 xa2 xa2],[ya2 ya2 yb2 yb2 ya2],'-');
 % create new population. this time we will use multivarian distribution to
 % figure out which class each point belongs to
+error = 0;
+count = 0;
 for i=1:N
 x=rand(1,1)*8; 
 y=rand(1,1)*8;
 if (((x > xa) && (y > ya) && (y < yb) && ( x < xb)) || ((x > xa2) && (y > ya2) && (y < yb2) && ( x < xb2)))
+    count = count + 1;
     % calculate the posterior density for class 2 assuming normal
     % distribution
     pdf1 = mvnpdf([x y],m1,c1);
@@ -92,20 +95,31 @@ if (((x > xa) && (y > ya) && (y < yb) && ( x < xb)) || ((x > xa2) && (y > ya2) &
     lg1 = -(1/2)*log(abs(c1))-(1/2)*inv(c1)*([x y]-m1).'*([x y]-m1)+log(prior1);
     lg2 = -(1/2)*log(abs(c2))-(1/2)*inv(c2)*([x y]-m2).'*([x y]-m2)+log(prior2);
     % quadratic discriminant functions
-    qg1 = -(1/2)*log(abs(c1))-(1/2)*((inv(c1)*[x y].'*[x y])-(2*inv(c1)*[x y].'*m1)+(inv(c1)*m1.'*m1))+log(prior1)
-    qg2 = -(1/2)*log(abs(c2))-(1/2)*((inv(c2)*[x y].'*[x y])-(2*inv(c2)*[x y].'*m1)+(inv(c2)*m1.'*m1))+log(prior2);
+    qg1 = -(1/2)*log(abs(c1))-(1/2)*((inv(c1)*[x y].'*[x y])-(2*inv(c1)*[x y].'*m1)+(inv(c1)*m1.'*m1))+log(prior1);
+    qg2 = -(1/2)*log(abs(c2))-(1/2)*((inv(c2)*[x y].'*[x y])-(2*inv(c2)*[x y].'*m2)+(inv(c2)*m2.'*m2))+log(prior2);
+    % common covariance
+    s = (prior1*c1)+(prior2*c2);
+    ccg1 = (-1/2)*inv(s)*([x y]-m1).'*([x y]-m1)+log(prior1);
+    ccg2 = (-1/2)*inv(s)*([x y]-m2).'*([x y]-m2)+log(prior2);
     
     % point belongs to class 1
-    if (qg1 >= qg2)
+    if (lg1 >= lg2)
         plot(x,y,'b+');
         xlim([0 8]);
         ylim([0 8]);
+        if ((x > xa2) && (y > ya2) && (y < yb2) && ( x < xb2))
+            error = error + 1;
+        end
         % point belongs to class 2
     else
         plot(x,y,'k*');
         xlim([0 8]);
         ylim([0 8]);
+        if ((x > xa) && (y > ya) && (y < yb) && ( x < xb))
+            error = error + 1;
+        end
     end
 end
 end
 hold off;
+(1-(error/count))*100
