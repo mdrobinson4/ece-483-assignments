@@ -6,8 +6,13 @@ xa=2; xb=4; ya=1; yb=3;
 % coordinates of the rectangle C2
 xa2=2; xb2=7; ya2=3; yb2=5;
 
+models = {'Arbitrary Covariance','Shared Covariance','Diagonal Covariance','Equal Variance'};
+
 % vary the number of datapoints in the training set
-q = linspace(100,1000,4);
+q = linspace(100,2000,4);
+% matrix to hold error for every complexity for each point count
+totalError = zeros(length(q),length(models));
+
 for cnt = 1:length(q)
     % generate positive and negative examples
     % no of data points
@@ -16,7 +21,6 @@ for cnt = 1:length(q)
     ds=zeros(N,2); 
     % store our labels
     ls=zeros(N,1);
-    models = {'Arbitrary Covariance','Shared Covariance','Diagonal Covariance','Equal Variance'};
     % create N random variables and generate population
     for i=1:N
         x=rand(1,1)*8; 
@@ -65,38 +69,42 @@ for cnt = 1:length(q)
     end
 
     % display the error rates and predicted classes
-    fprintf('Error Rates: (%.4f Datapoints)\n',q(cnt));
+    fprintf('Error Rates: (%d data points)\n',N);
     figure(cnt)
     
     % loop through each complexity
     for i=1:length(models)
-    % display error rates for each complexity
-    fprintf('%s: %.4f\n', string(models(i)),100*(fn(i)+fp(i))/N);
-    
-    % show points
-    subplot(2,2,i)
-    hold on
-    
-    title(string(models(i)));
-    xlabel('x');
-    ylabel('y')
+        totalError(cnt,i) = (fn(i)+fp(i))/N;
+        % display error rates for each complexity
+        fprintf('%s: %.4f\n', string(models(i)),100*(fn(i)+fp(i))/N);
 
-    % draw boundaries
-    plot([xa xb xb xa xa],[ya ya yb yb ya],'-');
-    plot([xa2 xb2 xb2 xa2 xa2],[ya2 ya2 yb2 yb2 ya2],'-');
-    
-    % plot points
-    for j=1:N
-       if(prediction(j,i)==1)
-           plot(x(j),y(j),'b+')
-       else
-           plot(x(j),y(j),'k*')
-       end
+        % show points
+        subplot(2,2,i)
+        hold on
+
+        title(string(models(i)));
+        xlabel('x');
+        ylabel('y');
+
+        % draw boundaries
+        plot([xa xb xb xa xa],[ya ya yb yb ya],'-');
+        plot([xa2 xb2 xb2 xa2 xa2],[ya2 ya2 yb2 yb2 ya2],'-');
+
+        % plot points
+        for j=1:N
+           if(prediction(j,i)==1)
+               plot(x(j),y(j),'b+')
+           else
+               plot(x(j),y(j),'k*')
+           end
+        end
+        hold off
     end
-    hold off
-    end
+    sgtitle("Multivariant Classification: (" + N + ") datapoints");
     fprintf('\n')
- end
+end
+ plotErr(totalError,models,q)
+ 
 
 function [pts1,pts2] = getPts(ls,ds)
 % get the indices for each class
@@ -137,7 +145,7 @@ else
     prediction(i,2) = 2;
 end
 % Diagonal Covariance -> covariance (off-diagonals equal)
-covMean = (sharedCov(1,2)+sharedCov(2,1))/2;
+covMean = mean([sharedCov(1,2),sharedCov(2,1)]);
 sharedCov(1,2) = covMean;
 sharedCov(2,1) = covMean;
 if mvnpdf([x y],mean1,sharedCov) > mvnpdf([x y],mean2,sharedCov)
@@ -146,7 +154,7 @@ else
     prediction(i,3) = 2;
 end
 % Equal Variance
-varMean = (sharedCov(1,1)+sharedCov(2,2))/2;
+varMean = mean([sharedCov(1,1),sharedCov(2,2)]);
 sharedCov(1,1) = varMean;
 sharedCov(2,2) = varMean;
 if mvnpdf([x y],mean1,sharedCov) > mvnpdf([x y],mean2,sharedCov)
@@ -181,4 +189,17 @@ for i=1:4
         fp(1,i) = fp(1,i)+1;
     end
 end
+end
+
+function plotErr(totalError,models,q)
+figure(5)
+hold on
+for i=1:length(models)
+   subplot(2,2,i);
+   plot(q,totalError(:,i))
+   title(string(models(i)));
+   xlabel('Data Points');
+   ylabel('Error');
+end
+hold off
 end
