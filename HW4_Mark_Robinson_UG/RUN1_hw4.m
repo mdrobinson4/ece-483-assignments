@@ -4,8 +4,14 @@ close all;
 load("264_optdigits.mat");
 
 plotRecErr(data)
+disp('Press Any Key To Continue')
+w = waitforbuttonpress;
 plotEval(data)
+disp('Press Any Key To Continue')
+w = waitforbuttonpress;
 plotPCA(data, class_label)
+disp('Press Any Key To Continue')
+w = waitforbuttonpress;
 eigenfaces(data, class_label)
 
 function plotRecErr(data)
