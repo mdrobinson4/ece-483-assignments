@@ -15,7 +15,7 @@ n = 10;
 model = train(trainlabels,trainfeatures,params);
 % predict the number values
 [predicted_label,cm] = predict(testlabels,testfeatures,model);
-str = sprintf('Cost: %d, Gamma: %d, Acuraccy: %d',c,g,a)
+str = sprintf('Cost: %d, Gamma: %d, 'Cost 
 
 
 % split data between training and testing
