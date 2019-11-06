@@ -1,2 +1,0 @@
-show graph for elbow method. To show where the best number of clusters meaches a peak.
-Visualize the mixture.

@@ -1,4 +1,6 @@
-clc; close all;
+clc; close all; clear all;
+
+rng(sum('MarkRobinson'));
 
 k = 20;  % number of mixtures
 N=500;  % number of points
@@ -13,14 +15,14 @@ mu2 = mean(X2,1);
 % sum of square error
 sse = zeros(k,1);
 % use the elbow method to find the optimal number of mixtures
-for i=1:k
+for i=1:1:k
     [sigma, mu] = gmme(X,X1,X2,i);  % estimate mean and covariance for data given mixture count
     ls = ap2m(X,mu,sigma,i,N);  % use mahalanobis distance to assign points to correct mixtures
-    sse(i) = calcSSE(X,ls,mu,sigma,i);  % calculate the sum of square error for each mixture
+    sse(i) = calcSSE(X,ls,mu,sigma);  % calculate the sum of square error for each mixture
 end
 % display the plot of the sum of square errors versus the number of clusters used
 plotElbow(k,sse);
-for i=[1 2 3]
+for i=[1 2 3 9]
     [sigma, mu] = gmme(X,X1,X2,i); % estimate mean and covariance for data given mixture count
     ls = ap2m(X,mu,sigma,i,N); % use mahalanobis distance to assign points to correct mixtures
     displayMixtures(X,ls,i); % display the mixtures
@@ -33,14 +35,16 @@ xa2=3; xb2=4; ya2=2; yb2=5;     % coordinates of the rectangle C2
 i=1;
 ds=zeros(N,2);
 ls=zeros(N,1);
+% organize the data into datasets
 while i<N
     x=rand(1,1)*8; y=rand(1,1)*8;
-    % +ve if falls in the rectangle, -ve otherwise
+    % store data into mixture 1
     if ((x > xa) && (y > ya) && (y < yb) && ( x < xb))
         ls(i)=1;
         ds(i,1)=x; 
         ds(i,2)=y; 
         i=i+1;
+    % store points into mixture 2
     elseif ((x > xa2) && (y > ya2) && (y < yb2) && ( x < xb2)) 
         ls(i)=2; 
         ds(i,1)=x; 
@@ -48,17 +52,17 @@ while i<N
         i=i+1; 
     end
 end
-ind1 = find(ls == 1);
-ind2 = find(ls == 2);
-X1 = ds(ind1,:);
-X2 = ds(ind2,:);
-X = [X1; X2];
+ind1 = find(ls == 1);   % get the indices for all of the points that belong to cluster 1
+ind2 = find(ls == 2);   % get the indices for all of the points that belong to cluster 2
+X1 = ds(ind1,:);    % cluster 1 datapoints
+X2 = ds(ind2,:);    % cluster 2 datapoints
+X = [X1; X2];   %  combine cluster 1 and 2
 end
 
-% return the mahalanobis distance between point p and the mixture with mean
+% return the mahalanobis distance between point p and the cluster with mean
 % mu and covariance sigma
 function [d] = md(p,mu,sigma)
-d = (p-mu)*(sigma^-1)*(p-mu)';
+d = (p-mu)*(sigma^-1)*(p-mu)';  % return the mahalanobis distance between the point and the mean of the corresponding datatset
 end
 
 
@@ -71,7 +75,7 @@ indeces = randperm(m);
 mu = X(indeces(1:k), :);
 sigma = [];
 % Use the overal covariance of the dataset as the initial variance for each cluster.
-for (j = 1 : k)
+for j=1:k
     sigma{j} = cov(X);
 end
 % Assign equal prior probabilities to each cluster.
@@ -87,14 +91,11 @@ for (iter = 1:1000)
     % One row per data point, one column per cluster.
     pdf = zeros(m, k);
     % For each cluster...
-    for (j = 1 : k)
+    for j=1:k
         % Evaluate the Gaussian for all data points for cluster 'j'.
         pdf(:, j) = gaussianND(X, mu(j, :), sigma{j});
     end
     % Multiply each pdf value by the prior probability for cluster.
-    %    pdf  [m  x  k]
-    %    phi  [1  x  k]   
-    %  pdf_w  [m  x  k]
     pdf_w = bsxfun(@times, pdf, phi);
     
     % Divide the weighted probabilities by the sum of weighted probabilities for each cluster.
@@ -129,7 +130,6 @@ for (iter = 1:1000)
     end         
 % End of Expectation Maximization    
 end
-%sse = getSse(X1,X2,mu,k);
 end
 
 % assign points to mixtures
@@ -150,20 +150,22 @@ for i=1:length(X)
 end
 end
 
-function [sse] = calcSSE(X,ls,mu,sigma,k)
+function [sse] = calcSSE(X,ls,mu,sigma)
 sse=0;
-for i=1:1:k
-    %sse = sse + (((X(find(ls==i))-mu(i,:))*((sigma{i})^-1)*(X(find(ls==i))-mu(i,:))'));
-    sse = sse + sum(sum((X(find(ls==i),:)-mu(i,:)).^2,2)); % find the distance between the point and the mean
-end     
+for i=1:1:length(mu)
+    x = X(find(ls==i),:);   % get points that belong to cluster
+    for j=1:1:length(x)
+        sse = sse + md(x(j,:),mu(i,:),sigma{i}); % calculate the sum of squarred error using the mahalanobis distance
+    end
+end
 end
 
 function plotElbow(k,sse)
 figure(1)
-plot(1:k,sse)
+plot(1:1:k,sse)
 title('Elbow Method');
 ylabel('Within Groups Sum of Squares');
-xlabel('Number of Mixtures');
+xlabel('Number of Clusters');
 end
 
 function displayMixtures(X,ls,k)
@@ -174,82 +176,10 @@ for i=1:k
     x = X(find(ls==i),1);
     y = X(find(ls==i),2);
    plot(x,y,style{i});
-   title("Expectation Maximization (" + k + " mixtures)");
+   title("Expectation Maximization (" + k + " clusters)");
    xlabel('x')
    ylabel('y')
 end
 hold off;
 end
-
-
-% 
-% function plotData(X,X1,X2,sigma1,sigma2,mu1,mu2,N)
-% figure(1);
-% % Display a scatter plot of the two distributions.
-% hold off;
-% plot(X1(:, 1), X1(:, 2), 'bo');
-% hold on;
-% plot(X2(:, 1), X2(:, 2), 'ro');
-% 
-% set(gcf,'color','white') % White background for the figure.
-% 
-% % First, create a [10,000 x 2] matrix 'gridX' of coordinates representing
-% % the input values over the grid.
-% gridSize = N;
-% x = linspace(0, 5, gridSize);
-% y = linspace(0, 6, gridSize);
-% [A B] = meshgrid(x, y);
-% gridX = [A(:), B(:)];
-% 
-% % Calculate the Gaussian response for every value in the grid.
-% z1 = gaussianND(gridX, mu1, sigma1);
-% z2 = gaussianND(gridX, mu2, sigma2);
-% 
-% % Reshape the responses back into a 2D grid to be plotted with contour.
-% Z1 = reshape(z1, gridSize, gridSize);
-% Z2 = reshape(z2, gridSize, gridSize);
-% 
-% % Plot the contour lines to show the pdf over the data.
-% [C, h] = contour(x, y, Z1);
-% [C, h] = contour(x, y, Z2);
-% %axis([1 4 1 5])
-% title('Original Data and PDFs');
-% end
-% 
-% 
-% 
-% function displayPredicted(X,X1,X2,sigma,mu,mu1,mu2,N,k)
-% % Display a scatter plot of the two distributions.
-% figure(2);
-% plot(X1(:, 1), X1(:, 2), 'bo');
-% hold on;
-% plot(X2(:, 1), X2(:, 2), 'ro');
-% 
-% set(gcf,'color','white') % White background for the figure.
-% 
-% % First, create a [10,000 x 2] matrix 'gridX' of coordinates representing
-% % the input values over the grid.
-% gridSize = N;
-% x = linspace(0, 5, gridSize);
-% y = linspace(0, 6, gridSize);
-% [A B] = meshgrid(x, y);
-% gridX = [A(:), B(:)];
-% 
-% % Calculate the Gaussian response for every value in the grid.
-% for i=1:k
-%     % Reshape the responses back into a 2D grid to be plotted with contour.
-%     z = gaussianND(gridX, mu(i, :), sigma{i});
-%     Z = reshape(z, gridSize, gridSize);
-%     % Plot the contour lines to show the pdf over the data.
-%     [C, h] = contour(x, y, Z);
-%     plot(mu(i,1,:),mu(i,2,:), 'kx');
-% end
-% %axis([0 4 1 5])
-% 
-% title('Original Data and Estimated PDFs');
-% hold off
-% end
-% 
-
-
 
