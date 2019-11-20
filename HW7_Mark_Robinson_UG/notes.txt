@@ -1,0 +1,5 @@
+how to estimate the number of states
+1) vary the number of states - lambda changes in learning
+2) performing in the number of states
+3)
+4) what you get is P(O)
