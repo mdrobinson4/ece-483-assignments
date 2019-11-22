@@ -1,7 +1,7 @@
 clc; close all; clear all;
 load("hmm.mat");
 
-% addpath(genpath('\HMMall')) 
+addpath(genpath('./HMMall')) 
 
 % learn parameters
 [q1, prior1, transmat1, obsmat1, llVal1, LL1, loglik1] = estParams(data1, 3);
