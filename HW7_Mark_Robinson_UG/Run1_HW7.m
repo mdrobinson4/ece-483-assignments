@@ -69,7 +69,7 @@ for q=1:1:40
     prior{q} = normalise(rand(q,1));
     transmat{q} = mk_stochastic(rand(q,q));
     obsmat{q} = mk_stochastic(rand(q,obCount));
-    [LL{q}, prior{q}, transmat{q}, obsmat{q}] = dhmm_em(data, prior{q}, transmat{q}, obsmat{q}, 'max_iter', 5);
+    [LL{q}, prior{q}, transmat{q}, obsmat{q}] = dhmm_em(data, prior{q}, transmat{q}, obsmat{q}, 'max_iter', 100);
     loglik(q) = dhmm_logprob(data, prior{q}, transmat{q}, obsmat{q});
 end
 [llVal, I] = max(loglik);
